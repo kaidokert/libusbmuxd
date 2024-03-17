@@ -88,6 +88,7 @@ static void print_usage(int argc, char **argv, int is_error)
         "Opens a read/write interface via STDIN/STDOUT to a TCP port on a usbmux device.\n" \
         "\n" \
         "OPTIONS:\n" \
+        "  -c, --list         list devices\n" \
         "  -u, --udid UDID    target specific device by UDID\n" \
         "  -n, --network      connect to network device\n" \
         "  -l, --local        connect to USB device (default)\n" \
@@ -103,6 +104,7 @@ static void print_usage(int argc, char **argv, int is_error)
 int main(int argc, char **argv)
 {
     const struct option longopts[] = {
+        { "list", no_argument, NULL, 'c' },
         { "debug", no_argument, NULL, 'd' },
         { "help", no_argument, NULL, 'h' },
         { "udid", required_argument, NULL, 'u' },
@@ -114,12 +116,16 @@ int main(int argc, char **argv)
 
     char* device_udid = NULL;
     static enum usbmux_lookup_options lookup_opts = 0;
+    static int enumerate_only = 0;
 
     int c = 0;
-    while ((c = getopt_long(argc, argv, "dhu:lnv", longopts, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "cdhu:lnv", longopts, NULL)) != -1) {
         switch (c) {
         case 'd':
             libusbmuxd_set_debug_level(++debug_level);
+            break;
+        case 'c':
+            enumerate_only = 1;
             break;
         case 'u':
             if (!*optarg) {
@@ -194,6 +200,10 @@ int main(int argc, char **argv)
 
         int i;
         for (i = 0; i < count; i++) {
+            if(enumerate_only) {
+                fprintf(stdout, "[%d]: type:%d udid=%s\n",i,dev_list[i].conn_type, dev_list[i].udid);
+                continue;
+            }
             if (dev_list[i].conn_type == CONNECTION_TYPE_USB && (lookup_opts & DEVICE_LOOKUP_USBMUX)) {
                 dev = &(dev_list[i]);
                 break;
@@ -202,6 +212,11 @@ int main(int argc, char **argv)
                 dev = &(dev_list[i]);
                 break;
             }
+        }
+        if(enumerate_only) {
+            fprintf(stderr,"Finished\n");
+            free(dev_list);
+            return 0;
         }
     }
 
