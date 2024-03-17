@@ -1294,6 +1294,7 @@ retry:
 			plist_t list = NULL;
 			if ((usbmuxd_get_result(sfd, tag, &res, &list) == 1) && (res == 0)) {
 				plist_t devlist = plist_dict_get_item(list, "DeviceList");
+				plist_write_to_stream(devlist, stdout, PLIST_FORMAT_XML, PLIST_OPT_INDENT);
 				if (devlist && plist_get_node_type(devlist) == PLIST_ARRAY) {
 					collection_init(&tmpdevs);
 					uint32_t numdevs = plist_array_get_size(devlist);
